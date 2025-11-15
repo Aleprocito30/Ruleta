@@ -1,0 +1,1157 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Ruleta Personalizable</title>
+<style>
+  :root {
+    --bg1: #0f2027;
+    --bg2: #203a43;
+    --text: #0e1116;
+    --panel: rgba(255,255,255,0.82);
+    --panel-border: rgba(0,0,0,0.08);
+    --accent: #6d5efc;
+    --pointer: #ff4757;
+    --btn-text: #ffffff;
+  }
+
+  body.theme-light {
+    --text: #0e1116;
+    --panel: rgba(255,255,255,0.9);
+    --panel-border: rgba(0,0,0,0.08);
+    --accent: #4f46e5;
+    --btn-text: #ffffff;
+  }
+  body.theme-dark {
+    --text: #e6e6e6;
+    --panel: rgba(18,18,22,0.75);
+    --panel-border: rgba(255,255,255,0.07);
+    --accent: #7c5cff;
+    --btn-text: #0d0f14;
+  }
+  body.theme-neon {
+    --text: #eaffff;
+    --panel: rgba(7,10,20,0.7);
+    --panel-border: rgba(0,255,255,0.15);
+    --accent: #00ffc6;
+    --btn-text: #001010;
+  }
+  body.theme-pastel {
+    --text: #283339;
+    --panel: rgba(255,255,255,0.86);
+    --panel-border: rgba(0,0,0,0.06);
+    --accent: #ff79c6;
+    --btn-text: #3e0a2a;
+  }
+
+  html, body {
+    height: 100%;
+  }
+  body {
+    margin: 0;
+    color: var(--text);
+    font: 15px/1.35 system-ui, -apple-system, Segoe UI, Roboto, Arial, "Noto Color Emoji", "Apple Color Emoji", "Segoe UI Emoji", sans-serif;
+    background: linear-gradient(135deg, var(--bg1), var(--bg2)) fixed;
+  }
+  .wrap {
+    min-height: 100dvh;
+    display: grid;
+    grid-template-columns: 360px 1fr;
+    gap: 18px;
+    padding: 18px;
+  }
+  @media (max-width: 980px) {
+    .wrap {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    border-radius: 14px;
+    padding: 14px;
+    box-shadow: 0 8px 28px rgba(0,0,0,0.15);
+    backdrop-filter: blur(6px);
+  }
+  h1 {
+    margin: 0 0 10px;
+    font-size: 20px;
+    letter-spacing: .3px;
+  }
+  .grid {
+    display: grid;
+    gap: 10px;
+  }
+  .row {
+    display: grid;
+    grid-template-columns: 130px 1fr;
+    align-items: center;
+    gap: 10px;
+  }
+  .row label {
+    font-weight: 600;
+    font-size: 12.5px;
+    opacity: .85;
+  }
+  select, input[type="text"], input[type="number"], textarea {
+    width: 100%;
+    padding: 9px 10px;
+    border-radius: 10px;
+    border: 1px solid var(--panel-border);
+    background: rgba(255,255,255,0.6);
+    outline: none;
+    color: inherit;
+  }
+  textarea {
+    min-height: 110px;
+    resize: vertical;
+  }
+  .color-inputs {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+  input[type="color"] {
+    width: 100%;
+    height: 36px;
+    padding: 0;
+    border: 1px solid var(--panel-border);
+    border-radius: 8px;
+    background: transparent;
+  }
+  input[type="range"] {
+    width: 100%;
+  }
+  .small {
+    font-size: 12px;
+    opacity: .8;
+  }
+  .buttons {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  button {
+    appearance: none;
+    border: 0;
+    border-radius: 10px;
+    padding: 10px 12px;
+    font-weight: 700;
+    cursor: pointer;
+    background: var(--accent);
+    color: var(--btn-text);
+    box-shadow: 0 6px 14px rgba(0,0,0,0.18), inset 0 -2px 0 rgba(0,0,0,0.15);
+    transition: transform .06s ease, filter .2s ease;
+  }
+  button:hover { filter: brightness(1.06); }
+  button:active { transform: translateY(1px); }
+  button.secondary {
+    background: transparent;
+    color: var(--text);
+    border: 1px dashed var(--panel-border);
+    box-shadow: none;
+  }
+  .split {
+    display: grid;
+    grid-template-columns: 1fr 520px;
+    gap: 18px;
+  }
+  @media (max-width: 980px) {
+    .split {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  /* Wheel */
+  .wheel-area {
+    display: grid;
+    align-content: start;
+    gap: 10px;
+  }
+  .canvas-wrap {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    max-width: 560px;
+    margin: 0 auto;
+  }
+  canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+    border-radius: 50%;
+  }
+  .pointer {
+    position: absolute;
+    left: 50%;
+    top: -2px;
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border-left: 14px solid transparent;
+    border-right: 14px solid transparent;
+    border-bottom: 22px solid var(--pointer);
+    filter: drop-shadow(0 2px 3px rgba(0,0,0,0.35));
+    z-index: 3;
+  }
+  .winner {
+    text-align: center;
+    font-weight: 800;
+    font-size: 22px;
+    letter-spacing: .3px;
+    padding: 6px 8px;
+    border-radius: 10px;
+    background: rgba(255,255,255,0.45);
+    border: 1px solid var(--panel-border);
+  }
+  .hint {
+    text-align: center;
+    font-size: 12px;
+    opacity: .85;
+  }
+</style>
+</head>
+<body class="theme-dark">
+  <div class="wrap">
+    <div class="panel grid">
+      <h1 data-i18n="title">Ruleta Personalizable</h1>
+
+      <div class="row">
+        <label for="lang" data-i18n="language">Idioma</label>
+        <select id="lang">
+          <option value="es">Español</option>
+          <option value="en">English</option>
+          <option value="pt">Português</option>
+          <option value="fr">Français</option>
+        </select>
+      </div>
+
+      <div class="row">
+        <label for="theme" data-i18n="theme">Tema</label>
+        <select id="theme">
+          <option value="dark" data-i18n="theme_dark">Oscuro</option>
+          <option value="light" data-i18n="theme_light">Claro</option>
+          <option value="neon" data-i18n="theme_neon">Neón</option>
+          <option value="pastel" data-i18n="theme_pastel">Pastel</option>
+        </select>
+      </div>
+
+      <div class="row">
+        <label data-i18n="background">Fondo</label>
+        <div class="grid">
+          <div class="color-inputs">
+            <div>
+              <div class="small" data-i18n="color1">Color 1</div>
+              <input id="bg1" type="color" value="#0f2027" />
+            </div>
+            <div>
+              <div class="small" data-i18n="color2">Color 2</div>
+              <input id="bg2" type="color" value="#2c5364" />
+            </div>
+          </div>
+          <div class="row" style="grid-template-columns: 80px 1fr;">
+            <label class="small" data-i18n="angle">Ángulo</label>
+            <input id="bgAngle" type="range" min="0" max="360" value="135" />
+          </div>
+          <div class="row">
+            <label class="small" data-i18n="image_url">Imagen (URL)</label>
+            <input id="bgImage" type="text" placeholder="https://… (opcional)" />
+          </div>
+          <div class="row" style="grid-template-columns: 80px 1fr;">
+            <label class="small" data-i18n="overlay">Opacidad</label>
+            <input id="bgOverlay" type="range" min="0" max="100" value="30" />
+          </div>
+        </div>
+      </div>
+
+      <div class="row">
+        <label data-i18n="wheel_style">Estilo ruleta</label>
+        <div class="grid">
+          <div class="row">
+            <label class="small" data-i18n="colors">Colores</label>
+            <select id="colorMode">
+              <option value="auto" data-i18n="color_mode_auto">Automático (arcoíris)</option>
+              <option value="mono" data-i18n="color_mode_mono">Monocromo (base)</option>
+              <option value="manual" data-i18n="color_mode_manual">Manual (lista)</option>
+            </select>
+          </div>
+          <div class="color-inputs" id="monoColors" style="display:none">
+            <div>
+              <div class="small" data-i18n="base_color">Base</div>
+              <input id="monoBase" type="color" value="#4f46e5" />
+            </div>
+            <div>
+              <div class="small" data-i18n="text_color">Texto</div>
+              <input id="textColor" type="color" value="#ffffff" />
+            </div>
+          </div>
+          <div class="row" id="manualColorsRow" style="display:none">
+            <label class="small" data-i18n="color_list">Lista colores</label>
+            <input id="manualColors" type="text" placeholder="#e91e63, #03a9f4, #ff9800…" />
+          </div>
+          <div class="color-inputs">
+            <div>
+              <div class="small" data-i18n="wheel_border">Borde ruleta</div>
+              <input id="borderColor" type="color" value="#111111" />
+            </div>
+            <div>
+              <div class="small" data-i18n="indicator">Indicador</div>
+              <input id="pointerColor" type="color" value="#ff4757" />
+            </div>
+          </div>
+          <div class="row" style="grid-template-columns: 120px 1fr;">
+            <label class="small" data-i18n="border_width">Grosor borde</label>
+            <input id="borderWidth" type="range" min="0" max="20" value="6" />
+          </div>
+          <div class="row" style="grid-template-columns: 120px 1fr;">
+            <label class="small" data-i18n="dividers">Separadores</label>
+            <input id="dividerWidth" type="range" min="0" max="6" value="1" />
+          </div>
+          <div class="row">
+            <label class="small" data-i18n="font">Fuente</label>
+            <select id="fontFamily">
+              <option value="system-ui,-apple-system,Segoe UI,Roboto,Arial" data-i18n="font_system_label">Sistema</option>
+              <option value="Arial, Helvetica, sans-serif">Arial</option>
+              <option value="Georgia, serif">Georgia</option>
+              <option value="'Trebuchet MS', sans-serif">Trebuchet MS</option>
+              <option value="'Courier New', monospace">Courier New</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="row">
+        <label data-i18n="segments">Segmentos</label>
+        <div class="grid">
+          <textarea id="segments" data-i18n-placeholder="segments_placeholder" placeholder="Escribe un segmento por línea">🍕 Pizza
+🍔 Hamburguesa
+🍣 Sushi
+🍜 Ramen
+🍦 Helado
+🍫 Chocolate</textarea>
+          <div class="buttons">
+            <button id="shuffleColors" class="secondary" data-i18n="shuffle_colors">Aleatorizar colores</button>
+            <button id="reset" class="secondary" data-i18n="reset">Restaurar</button>
+            <button id="save" class="secondary" data-i18n="save">Guardar</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="row">
+        <label data-i18n="animation">Animación</label>
+        <div class="grid">
+          <div class="row" style="grid-template-columns: 120px 1fr;">
+            <label class="small" data-i18n="duration">Duración</label>
+            <input id="duration" type="range" min="1" max="10" value="4" />
+          </div>
+          <div class="row" style="grid-template-columns: 120px 1fr;">
+            <label class="small" data-i18n="extra_spins">Vueltas extra</label>
+            <input id="extraSpins" type="range" min="2" max="12" value="6" />
+          </div>
+        </div>
+      </div>
+
+      <div class="buttons">
+        <button id="spin" data-i18n="spin">Girar</button>
+        <button id="stop" class="secondary" data-i18n="stop">Detener</button>
+        <button id="download" class="secondary" data-i18n="download_png">Descargar PNG</button>
+      </div>
+    </div>
+
+    <div class="panel wheel-area">
+      <div class="canvas-wrap">
+        <canvas id="wheel" width="900" height="900" aria-label="Ruleta"></canvas>
+        <div class="pointer" id="pointer"></div>
+      </div>
+      <div class="winner" id="winner" data-state="ready">Listo para girar…</div>
+      <div class="hint" id="hint" data-i18n="hint">Escribe tus opciones, ajusta estilo y fondo, luego ¡Girar!</div>
+    </div>
+  </div>
+
+<script>
+(function(){
+  const $ = s => document.querySelector(s);
+  const byId = id => document.getElementById(id);
+
+  // ===== i18n =====
+  const I18N = {
+    es: {
+      title: "Ruleta Personalizable",
+      language: "Idioma",
+      theme: "Tema",
+      theme_light: "Claro",
+      theme_dark: "Oscuro",
+      theme_neon: "Neón",
+      theme_pastel: "Pastel",
+      background: "Fondo",
+      color1: "Color 1",
+      color2: "Color 2",
+      angle: "Ángulo",
+      image_url: "Imagen (URL)",
+      overlay: "Opacidad",
+      wheel_style: "Estilo ruleta",
+      colors: "Colores",
+      color_mode_auto: "Automático (arcoíris)",
+      color_mode_mono: "Monocromo (base)",
+      color_mode_manual: "Manual (lista)",
+      base_color: "Base",
+      text_color: "Texto",
+      color_list: "Lista colores",
+      wheel_border: "Borde ruleta",
+      indicator: "Indicador",
+      border_width: "Grosor borde",
+      dividers: "Separadores",
+      font: "Fuente",
+      font_system_label: "Sistema",
+      segments: "Segmentos",
+      segments_placeholder: "Escribe un segmento por línea",
+      shuffle_colors: "Aleatorizar colores",
+      reset: "Restaurar",
+      save: "Guardar",
+      animation: "Animación",
+      duration: "Duración",
+      extra_spins: "Vueltas extra",
+      spin: "Girar",
+      stop: "Detener",
+      download_png: "Descargar PNG",
+      ready: "Listo para girar…",
+      spinning: "Girando…",
+      winner_prefix: "Ganador:",
+      hint: "Escribe tus opciones, ajusta estilo y fondo, luego ¡Girar!"
+    },
+    en: {
+      title: "Customizable Wheel",
+      language: "Language",
+      theme: "Theme",
+      theme_light: "Light",
+      theme_dark: "Dark",
+      theme_neon: "Neon",
+      theme_pastel: "Pastel",
+      background: "Background",
+      color1: "Color 1",
+      color2: "Color 2",
+      angle: "Angle",
+      image_url: "Image (URL)",
+      overlay: "Overlay",
+      wheel_style: "Wheel style",
+      colors: "Colors",
+      color_mode_auto: "Automatic (rainbow)",
+      color_mode_mono: "Monochrome (base)",
+      color_mode_manual: "Manual (list)",
+      base_color: "Base",
+      text_color: "Text",
+      color_list: "Color list",
+      wheel_border: "Wheel border",
+      indicator: "Pointer",
+      border_width: "Border width",
+      dividers: "Dividers",
+      font: "Font",
+      font_system_label: "System",
+      segments: "Segments",
+      segments_placeholder: "One item per line",
+      shuffle_colors: "Shuffle colors",
+      reset: "Reset",
+      save: "Save",
+      animation: "Animation",
+      duration: "Duration",
+      extra_spins: "Extra spins",
+      spin: "Spin",
+      stop: "Stop",
+      download_png: "Download PNG",
+      ready: "Ready to spin…",
+      spinning: "Spinning…",
+      winner_prefix: "Winner:",
+      hint: "Type your options, tweak style and background, then Spin!"
+    },
+    pt: {
+      title: "Roleta Personalizável",
+      language: "Idioma",
+      theme: "Tema",
+      theme_light: "Claro",
+      theme_dark: "Escuro",
+      theme_neon: "Neon",
+      theme_pastel: "Pastel",
+      background: "Fundo",
+      color1: "Cor 1",
+      color2: "Cor 2",
+      angle: "Ângulo",
+      image_url: "Imagem (URL)",
+      overlay: "Opacidade",
+      wheel_style: "Estilo da roleta",
+      colors: "Cores",
+      color_mode_auto: "Automático (arco-íris)",
+      color_mode_mono: "Monocromático (base)",
+      color_mode_manual: "Manual (lista)",
+      base_color: "Base",
+      text_color: "Texto",
+      color_list: "Lista de cores",
+      wheel_border: "Borda da roleta",
+      indicator: "Indicador",
+      border_width: "Espessura da borda",
+      dividers: "Divisores",
+      font: "Fonte",
+      font_system_label: "Sistema",
+      segments: "Segmentos",
+      segments_placeholder: "Um item por linha",
+      shuffle_colors: "Embaralhar cores",
+      reset: "Restaurar",
+      save: "Salvar",
+      animation: "Animação",
+      duration: "Duração",
+      extra_spins: "Voltas extras",
+      spin: "Girar",
+      stop: "Parar",
+      download_png: "Baixar PNG",
+      ready: "Pronto para girar…",
+      spinning: "Girando…",
+      winner_prefix: "Vencedor:",
+      hint: "Digite suas opções, ajuste o estilo e o fundo e depois clique em Girar!"
+    },
+    fr: {
+      title: "Roue personnalisable",
+      language: "Langue",
+      theme: "Thème",
+      theme_light: "Clair",
+      theme_dark: "Sombre",
+      theme_neon: "Néon",
+      theme_pastel: "Pastel",
+      background: "Arrière-plan",
+      color1: "Couleur 1",
+      color2: "Couleur 2",
+      angle: "Angle",
+      image_url: "Image (URL)",
+      overlay: "Opacité",
+      wheel_style: "Style de la roue",
+      colors: "Couleurs",
+      color_mode_auto: "Automatique (arc-en-ciel)",
+      color_mode_mono: "Monochrome (base)",
+      color_mode_manual: "Manuel (liste)",
+      base_color: "Base",
+      text_color: "Texte",
+      color_list: "Liste de couleurs",
+      wheel_border: "Bord de la roue",
+      indicator: "Indicateur",
+      border_width: "Épaisseur du bord",
+      dividers: "Séparateurs",
+      font: "Police",
+      font_system_label: "Système",
+      segments: "Segments",
+      segments_placeholder: "Un élément par ligne",
+      shuffle_colors: "Mélanger les couleurs",
+      reset: "Réinitialiser",
+      save: "Enregistrer",
+      animation: "Animation",
+      duration: "Durée",
+      extra_spins: "Tours supplémentaires",
+      spin: "Tourner",
+      stop: "Arrêter",
+      download_png: "Télécharger PNG",
+      ready: "Prêt à tourner…",
+      spinning: "En rotation…",
+      winner_prefix: "Gagnant :",
+      hint: "Saisissez vos options, ajustez le style et l’arrière-plan, puis cliquez sur Tourner !"
+    }
+  };
+  const FILE_NAME = { es: 'ruleta.png', en: 'wheel.png', pt: 'roleta.png', fr: 'roue.png' };
+  const hasLang = l => Object.prototype.hasOwnProperty.call(I18N, l);
+  const t = (key, lang) => {
+    const L = lang || model.lang || 'en';
+    return (I18N[L] && I18N[L][key]) || (I18N.en && I18N.en[key]) || (I18N.es && I18N.es[key]) || key;
+  };
+  function detectLang() {
+    const n = (navigator.language || navigator.userLanguage || 'en').toLowerCase();
+    if (n.startsWith('es')) return 'es';
+    if (n.startsWith('pt')) return 'pt';
+    if (n.startsWith('fr')) return 'fr';
+    return 'en';
+  }
+  function defaultSegmentsFor(lang){
+    switch (lang){
+      case 'en': return ["🍕 Pizza","🍔 Burger","🍣 Sushi","🍜 Ramen","🍦 Ice Cream","🍫 Chocolate"];
+      case 'pt': return ["🍕 Pizza","🍔 Hambúrguer","🍣 Sushi","🍜 Ramen","🍦 Sorvete","🍫 Chocolate"];
+      case 'fr': return ["🍕 Pizza","🍔 Burger","🍣 Sushi","🍜 Ramen","🍦 Glace","🍫 Chocolat"];
+      case 'es':
+      default: return ["🍕 Pizza","🍔 Hamburguesa","🍣 Sushi","🍜 Ramen","🍦 Helado","🍫 Chocolate"];
+    }
+  }
+
+  // Elements
+  const canvas = byId('wheel');
+  const ctx = canvas.getContext('2d');
+  const pointerEl = byId('pointer');
+  const winnerEl = byId('winner');
+  const hintEl = byId('hint');
+
+  // Controls
+  const langSel = byId('lang');
+  const theme = byId('theme');
+  const bg1 = byId('bg1');
+  const bg2 = byId('bg2');
+  const bgAngle = byId('bgAngle');
+  const bgImage = byId('bgImage');
+  const bgOverlay = byId('bgOverlay');
+
+  const colorMode = byId('colorMode');
+  const monoColorsWrap = byId('monoColors');
+  const manualColorsRow = byId('manualColorsRow');
+  const monoBase = byId('monoBase');
+  const textColor = byId('textColor');
+  const manualColors = byId('manualColors');
+
+  const borderColor = byId('borderColor');
+  const pointerColor = byId('pointerColor');
+  const borderWidth = byId('borderWidth');
+  const dividerWidth = byId('dividerWidth');
+  const fontFamily = byId('fontFamily');
+
+  const segmentsInput = byId('segments');
+
+  const duration = byId('duration');
+  const extraSpins = byId('extraSpins');
+
+  const spinBtn = byId('spin');
+  const stopBtn = byId('stop');
+  const shuffleBtn = byId('shuffleColors');
+  const resetBtn = byId('reset');
+  const saveBtn = byId('save');
+  const downloadBtn = byId('download');
+
+  // State
+  const state = {
+    rotation: 0, // radians
+    targetRotation: 0,
+    spinning: false,
+    raf: null,
+    paletteSeed: Math.random()*360,
+    winnerValue: null // store last winner label for i18n prefix update
+  };
+
+  const defaultState = () => ({
+    lang: detectLang(),
+    theme: 'dark',
+    bg: { c1: '#0f2027', c2: '#2c5364', angle: 135, image: '', overlay: 30 },
+    wheel: {
+      colorMode: 'auto',
+      monoBase: '#4f46e5',
+      manualColors: '',
+      textColor: '#ffffff',
+      borderColor: '#111111',
+      borderWidth: 6,
+      dividerWidth: 1,
+      pointerColor: '#ff4757',
+      font: "system-ui,-apple-system,Segoe UI,Roboto,Arial"
+    },
+    anim: { duration: 4, extra: 6 },
+    segments: defaultSegmentsFor(detectLang())
+  });
+
+  let model = loadModel() || defaultState();
+
+  // Apply model to UI
+  function applyModelToUI() {
+    // lang
+    if (!hasLang(model.lang)) model.lang = 'en';
+    langSel.value = model.lang;
+    document.documentElement.lang = model.lang;
+    document.title = t('title');
+    applyI18n();
+
+    // theme
+    theme.value = model.theme;
+    document.body.className = `theme-${model.theme}`;
+
+    // background
+    bg1.value = model.bg.c1;
+    bg2.value = model.bg.c2;
+    bgAngle.value = model.bg.angle;
+    bgImage.value = model.bg.image || '';
+    bgOverlay.value = model.bg.overlay;
+    applyBackground();
+
+    // wheel style
+    colorMode.value = model.wheel.colorMode;
+    monoBase.value = model.wheel.monoBase;
+    manualColors.value = model.wheel.manualColors;
+    textColor.value = model.wheel.textColor;
+    borderColor.value = model.wheel.borderColor;
+    borderWidth.value = model.wheel.borderWidth;
+    dividerWidth.value = model.wheel.dividerWidth;
+    pointerColor.value = model.wheel.pointerColor;
+    pointerEl.style.borderBottomColor = model.wheel.pointerColor;
+    fontFamily.value = model.wheel.font;
+
+    // content
+    segmentsInput.value = model.segments.join("\n");
+    duration.value = model.anim.duration;
+    extraSpins.value = model.anim.extra;
+
+    toggleColorModeRows();
+    canvas.setAttribute('aria-label', t('title'));
+    winnerEl.dataset.state = 'ready';
+    winnerEl.textContent = t('ready');
+    hintEl.textContent = t('hint');
+    draw();
+  }
+
+  function applyI18n(){
+    // Replace textContent in [data-i18n]
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+      const key = el.getAttribute('data-i18n');
+      el.textContent = t(key);
+    });
+    // Replace placeholder in [data-i18n-placeholder]
+    document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+      const key = el.getAttribute('data-i18n-placeholder');
+      el.setAttribute('placeholder', t(key));
+    });
+    // Title and aria labels
+    document.title = t('title');
+    canvas.setAttribute('aria-label', t('title'));
+    // Winner text according to state
+    if (winnerEl.dataset.state === 'ready') {
+      winnerEl.textContent = t('ready');
+    } else if (winnerEl.dataset.state === 'spinning') {
+      winnerEl.textContent = t('spinning');
+    } else if (winnerEl.dataset.state === 'winner' && state.winnerValue != null) {
+      winnerEl.textContent = `${t('winner_prefix')} ${state.winnerValue}`;
+    }
+  }
+
+  // Helpers: colors
+  function clamp(v, a, b){ return Math.max(a, Math.min(b, v)); }
+
+  function hexToHsl(hex) {
+    hex = hex.replace('#','');
+    if (hex.length===3) hex = hex.split('').map(c=>c+c).join('');
+    const num = parseInt(hex, 16);
+    const r = ((num >> 16) & 255) / 255;
+    const g = ((num >> 8) & 255) / 255;
+    const b = (num & 255) / 255;
+    const max = Math.max(r,g,b), min = Math.min(r,g,b);
+    let h, s, l = (max + min) / 2;
+    if (max === min) { h = s = 0; }
+    else {
+      const d = max - min;
+      s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+      switch(max) {
+        case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+        case g: h = (b - r) / d + 2; break;
+        case b: h = (r - g) / d + 4; break;
+      }
+      h /= 6;
+    }
+    return { h: h*360, s: s*100, l: l*100 };
+  }
+  function hslToHex(h, s, l){
+    h = ((h%360)+360)%360; s/=100; l/=100;
+    const a = s * Math.min(l, 1 - l);
+    const f = n => {
+      const k = (n + h/30) % 12;
+      const color = l - a * Math.max(-1, Math.min(k - 3, Math.min(9 - k, 1)));
+      return Math.round(255 * color);
+    };
+    return "#" + [f(0), f(8), f(4)].map(x => x.toString(16).padStart(2, '0')).join('');
+  }
+
+  function generatePalette(count) {
+    const mode = model.wheel.colorMode;
+    if (mode === 'manual') {
+      const cols = (model.wheel.manualColors || '')
+        .split(/[,\s]+/)
+        .map(x=>x.trim())
+        .filter(Boolean);
+      if (cols.length) {
+        return Array.from({length: count}, (_,i)=> cols[i % cols.length]);
+      }
+    }
+    if (mode === 'mono') {
+      const base = hexToHsl(model.wheel.monoBase || '#4f46e5');
+      const palette = [];
+      for (let i=0;i<count;i++) {
+        const t = count<=1 ? 0.5 : i/(count-1);
+        const l = clamp(base.l*0.7 + (t-0.5)*50, 20, 78);
+        const s = clamp(base.s*0.9 + (Math.sin(i*1.2)*6), 35, 90);
+        palette.push(hslToHex(base.h, s, l));
+      }
+      return palette;
+    }
+    // auto rainbow using golden angle
+    const seed = state.paletteSeed;
+    const palette = [];
+    for (let i=0;i<count;i++) {
+      const h = (seed + i * 137.508) % 360;
+      palette.push(hslToHex(h, 68, 56));
+    }
+    return palette;
+  }
+
+  // Background
+  function applyBackground(){
+    document.documentElement.style.setProperty('--bg1', model.bg.c1);
+    document.documentElement.style.setProperty('--bg2', model.bg.c2);
+    const angle = model.bg.angle || 135;
+    const overlay = clamp(model.bg.overlay, 0, 100) / 100;
+    let bg = `linear-gradient(${angle}deg, ${model.bg.c1}, ${model.bg.c2})`;
+    if (model.bg.image && model.bg.image.trim().length > 6) {
+      // Two-layer: image + gradient overlay
+      document.body.style.background = `
+        linear-gradient(${angle}deg, ${hexWithAlpha(model.bg.c1, overlay)}, ${hexWithAlpha(model.bg.c2, overlay)}),
+        url("${model.bg.image}") center/cover fixed
+      `;
+    } else {
+      document.body.style.background = bg + ' fixed';
+    }
+  }
+  function hexWithAlpha(hex, a){
+    hex = hex.replace('#','');
+    if (hex.length===3) hex = hex.split('').map(c=>c+c).join('');
+    const r = parseInt(hex.slice(0,2),16);
+    const g = parseInt(hex.slice(2,4),16);
+    const b = parseInt(hex.slice(4,6),16);
+    return `rgba(${r},${g},${b},${a})`;
+  }
+
+  // Drawing
+  function getSegments(){
+    return segmentsInput.value
+      .split('\n')
+      .map(x=>x.trim())
+      .filter(Boolean);
+  }
+
+  function fitCanvas(){
+    const parent = canvas.parentElement;
+    const size = Math.min(parent.clientWidth, parent.clientHeight);
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    canvas.width = size * dpr;
+    canvas.height = size * dpr;
+    canvas.style.width = size + 'px';
+    canvas.style.height = size + 'px';
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+  }
+
+  function draw(){
+    fitCanvas();
+    const W = canvas.width / (window.devicePixelRatio||1);
+    const H = canvas.height / (window.devicePixelRatio||1);
+    const cx = W/2, cy = H/2;
+    const R = Math.min(W,H)/2 - 8;
+
+    ctx.clearRect(0,0,W,H);
+    const segments = getSegments();
+    if (!segments.length) return;
+
+    const n = segments.length;
+    const arc = Math.PI * 2 / n;
+    const colors = generatePalette(n);
+
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(state.rotation - Math.PI/2);
+
+    // slices
+    for (let i=0; i<n; i++) {
+      const start = i * arc;
+      const end = start + arc;
+      ctx.beginPath();
+      ctx.moveTo(0,0);
+      ctx.arc(0,0,R,start,end,false);
+      ctx.closePath();
+      ctx.fillStyle = colors[i] || '#ccc';
+      ctx.fill();
+    }
+
+    // divider lines
+    const dW = +dividerWidth.value;
+    if (dW > 0 && n>1) {
+      ctx.save();
+      ctx.strokeStyle = 'rgba(0,0,0,0.18)';
+      ctx.lineWidth = dW;
+      for (let i=0;i<n;i++){
+        const a = i*arc;
+        ctx.beginPath();
+        ctx.moveTo(0,0);
+        ctx.lineTo(Math.cos(a)*R, Math.sin(a)*R);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    // border
+    const bW = +borderWidth.value;
+    if (bW > 0) {
+      ctx.beginPath();
+      ctx.lineWidth = bW;
+      ctx.strokeStyle = borderColor.value;
+      ctx.arc(0,0,R,0,Math.PI*2);
+      ctx.stroke();
+    }
+
+    // labels
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = textColor.value;
+    const font = model.wheel.font;
+    const baseFontSize = Math.max(12, Math.min(24, R*0.09));
+    ctx.font = `${baseFontSize}px ${font}`;
+    for (let i=0; i<n; i++) {
+      const label = segments[i];
+      const a = i*arc + arc/2;
+      ctx.save();
+      ctx.rotate(a);
+      ctx.translate(R*0.65, 0);
+
+      const maxW = R*0.55;
+      let size = baseFontSize;
+      ctx.font = `${size}px ${font}`;
+      let metrics = ctx.measureText(label);
+      const textW = metrics.width;
+      if (textW > maxW) {
+        size = Math.max(10, size * (maxW / (textW+0.01)));
+        ctx.font = `${size}px ${font}`;
+      }
+
+      ctx.rotate(Math.PI/2);
+      ctx.fillText(label, 0, 0);
+      ctx.restore();
+    }
+
+    // hub
+    ctx.beginPath();
+    ctx.fillStyle = 'rgba(255,255,255,0.95)';
+    ctx.arc(0,0, Math.max(10, R*0.05), 0, Math.PI*2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function easeOutCubic(t){ return 1 - Math.pow(1-t, 3); }
+
+  function spin(){
+    if (state.spinning) return;
+    const items = getSegments();
+    if (items.length === 0) return;
+
+    state.spinning = true;
+    state.winnerValue = null;
+    winnerEl.dataset.state = 'spinning';
+    winnerEl.textContent = t('spinning');
+
+    const n = items.length;
+    const arc = Math.PI*2/n;
+
+    const winIndex = Math.floor(Math.random()*n);
+    const margin = arc * 0.06;
+    const delta = (Math.random() * (arc - margin*2)) - (arc/2 - margin);
+    const theta_c = winIndex*arc + arc/2 + delta;
+
+    const base = modTau(state.rotation);
+    const desired = modTau(-theta_c);
+    let deltaToDesired = modTau(desired - base);
+    const spins = (+extraSpins.value|0);
+    const extra = (spins < 2 ? 2 : spins) * Math.PI*2;
+    const totalDelta = extra + deltaToDesired;
+
+    const start = state.rotation;
+    const end = start + totalDelta;
+    state.targetRotation = end;
+
+    const dur = clamp(+duration.value, 1, 12) * 1000;
+    let startTime = performance.now();
+
+    cancelAnimationFrame(state.raf);
+    const frame = (now) => {
+      const ttt = clamp((now - startTime) / dur, 0, 1);
+      const k = easeOutCubic(ttt);
+      state.rotation = start + (end - start) * k;
+      draw();
+
+      if (ttt < 1 && state.spinning) {
+        state.raf = requestAnimationFrame(frame);
+      } else {
+        state.spinning = false;
+        state.rotation = end;
+        draw();
+        state.winnerValue = items[winIndex];
+        winnerEl.dataset.state = 'winner';
+        winnerEl.textContent = `${t('winner_prefix')} ${state.winnerValue}`;
+      }
+    };
+    state.raf = requestAnimationFrame(frame);
+  }
+
+  function stopSpin(){
+    if (!state.spinning) return;
+    state.spinning = false;
+    cancelAnimationFrame(state.raf);
+    if (isFinite(state.targetRotation)) {
+      state.rotation = state.targetRotation;
+      draw();
+      const items = getSegments();
+      const n = items.length;
+      const arc = Math.PI*2/n;
+      const topAngle = modTau(-state.rotation);
+      const idx = Math.floor(modTau(topAngle) / arc) % n;
+      state.winnerValue = items[idx];
+      winnerEl.dataset.state = 'winner';
+      winnerEl.textContent = `${t('winner_prefix')} ${state.winnerValue}`;
+    }
+  }
+
+  function modTau(x){
+    const tau = Math.PI*2;
+    return ((x % tau) + tau) % tau;
+  }
+
+  function toggleColorModeRows(){
+    const mode = colorMode.value;
+    monoColorsWrap.style.display = mode === 'mono' ? '' : 'none';
+    manualColorsRow.style.display = mode === 'manual' ? '' : 'none';
+  }
+
+  // Events
+  langSel.addEventListener('change', () => {
+    model.lang = hasLang(langSel.value) ? langSel.value : 'en';
+    document.documentElement.lang = model.lang;
+    applyI18n();
+    saveModel();
+  });
+
+  theme.addEventListener('change', () => {
+    model.theme = theme.value;
+    document.body.className = `theme-${model.theme}`;
+    saveModel();
+  });
+
+  [bg1, bg2, bgAngle, bgImage, bgOverlay].forEach(el => {
+    el.addEventListener('input', () => {
+      model.bg.c1 = bg1.value;
+      model.bg.c2 = bg2.value;
+      model.bg.angle = +bgAngle.value;
+      model.bg.image = bgImage.value.trim();
+      model.bg.overlay = +bgOverlay.value;
+      applyBackground();
+      saveModel();
+    });
+  });
+
+  colorMode.addEventListener('change', () => {
+    model.wheel.colorMode = colorMode.value;
+    toggleColorModeRows();
+    draw();
+    saveModel();
+  });
+  monoBase.addEventListener('input', ()=>{ model.wheel.monoBase = monoBase.value; draw(); saveModel(); });
+  manualColors.addEventListener('input', ()=>{ model.wheel.manualColors = manualColors.value; draw(); saveModel(); });
+  textColor.addEventListener('input', ()=>{ model.wheel.textColor = textColor.value; draw(); saveModel(); });
+  borderColor.addEventListener('input', ()=>{ model.wheel.borderColor = borderColor.value; draw(); saveModel(); });
+  borderWidth.addEventListener('input', ()=>{ model.wheel.borderWidth = +borderWidth.value; draw(); saveModel(); });
+  dividerWidth.addEventListener('input', ()=>{ model.wheel.dividerWidth = +dividerWidth.value; draw(); saveModel(); });
+  pointerColor.addEventListener('input', ()=>{
+    model.wheel.pointerColor = pointerColor.value;
+    document.documentElement.style.setProperty('--pointer', pointerColor.value);
+    pointerEl.style.borderBottomColor = pointerColor.value;
+    saveModel();
+  });
+  fontFamily.addEventListener('change', ()=>{ model.wheel.font = fontFamily.value; draw(); saveModel(); });
+
+  segmentsInput.addEventListener('input', ()=>{ model.segments = getSegments(); draw(); saveModel(); });
+
+  duration.addEventListener('input', ()=>{ model.anim.duration = +duration.value; saveModel(); });
+  extraSpins.addEventListener('input', ()=>{ model.anim.extra = +extraSpins.value; saveModel(); });
+
+  spinBtn.addEventListener('click', spin);
+  stopBtn.addEventListener('click', stopSpin);
+  shuffleBtn.addEventListener('click', () => {
+    state.paletteSeed = Math.random()*360;
+    draw();
+  });
+
+  resetBtn.addEventListener('click', () => {
+    const keepLang = model.lang;
+    model = defaultState();
+    model.lang = keepLang;
+    model.segments = defaultSegmentsFor(keepLang);
+    applyModelToUI();
+    winnerEl.dataset.state = 'ready';
+    winnerEl.textContent = t('ready');
+    saveModel();
+  });
+
+  saveBtn.addEventListener('click', saveModel);
+
+  downloadBtn.addEventListener('click', () => {
+    draw();
+    const exportCanvas = document.createElement('canvas');
+    const size = 1200;
+    const dpr = 2;
+    exportCanvas.width = size*dpr;
+    exportCanvas.height = size*dpr;
+    const ex = exportCanvas.getContext('2d');
+    ex.setTransform(dpr,0,0,dpr,0,0);
+
+    ex.clearRect(0,0,size,size);
+
+    const tmp = document.createElement('canvas');
+    tmp.width = canvas.width;
+    tmp.height = canvas.height;
+    const tctx = tmp.getContext('2d');
+    tctx.drawImage(canvas,0,0);
+    ex.drawImage(tmp, 0, 0, size, size);
+
+    // pointer triangle
+    const pW = 22, pH = 32;
+    ex.save();
+    ex.translate(size/2, 8);
+    ex.beginPath();
+    ex.moveTo(0, 0);
+    ex.lineTo(-pW/2, pH);
+    ex.lineTo(pW/2, pH);
+    ex.closePath();
+    ex.fillStyle = model.wheel.pointerColor;
+    ex.shadowColor = 'rgba(0,0,0,0.35)';
+    ex.shadowBlur = 6;
+    ex.shadowOffsetY = 2;
+    ex.fill();
+    ex.restore();
+
+    const link = document.createElement('a');
+    const fname = FILE_NAME[model.lang] || 'wheel.png';
+    link.download = fname;
+    link.href = exportCanvas.toDataURL('image/png');
+    link.click();
+  });
+
+  window.addEventListener('resize', draw);
+
+  // Persistence
+  function saveModel(){
+    try {
+      localStorage.setItem('wheel-model-v2-i18n', JSON.stringify(model));
+    } catch {}
+  }
+  function loadModel(){
+    try {
+      const txt = localStorage.getItem('wheel-model-v2-i18n') || localStorage.getItem('wheel-model-v1');
+      if (!txt) return null;
+      const obj = JSON.parse(txt);
+      const d = defaultState();
+      return {
+        lang: hasLang(obj.lang) ? obj.lang : (obj.lang || d.lang),
+        theme: obj.theme ?? d.theme,
+        bg: Object.assign({}, d.bg, obj.bg||{}),
+        wheel: Object.assign({}, d.wheel, obj.wheel||{}),
+        anim: Object.assign({}, d.anim, obj.anim||{}),
+        segments: Array.isArray(obj.segments) && obj.segments.length ? obj.segments : d.segments
+      };
+    } catch { return null; }
+  }
+
+  // Init
+  applyModelToUI();
+  document.documentElement.style.setProperty('--pointer', model.wheel.pointerColor);
+})();
+</script>
+</body>
+</html>
